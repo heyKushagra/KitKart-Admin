@@ -263,7 +263,7 @@ export function Products() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <img
-                          src={p.mainImage || p.image || "/images/products/jersey1.jpg"}
+                          src={p.mainImage || p.image || `${import.meta.env.BASE_URL}images/products/jersey1.jpg`}
                           alt={p.name}
                           className="h-10 w-10 rounded-lg object-cover ring-1 ring-slate-200"
                         />
