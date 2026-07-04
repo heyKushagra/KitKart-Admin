@@ -47,10 +47,10 @@ export function Products() {
     setMainCategory(val);
     if (val === "Boots") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Football Boots" }));
+      setForm((f) => ({ ...f, category: "Football Boots", price: undefined, stock: undefined }));
     } else {
       setSubCategory("Football");
-      setForm((f) => ({ ...f, category: "Football Jerseys" }));
+      setForm((f) => ({ ...f, category: "Football Jerseys", price: 0, stock: 0 }));
     }
   }
 
@@ -181,9 +181,17 @@ export function Products() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || typeof form.price !== "number" || !form.category) {
-      toast.error("Please fill in name, price and category");
-      return;
+    const isBoot = mainCategory === "Boots";
+    if (isBoot) {
+      if (!form.name.trim() || !form.category) {
+        toast.error("Please fill in name and category");
+        return;
+      }
+    } else {
+      if (!form.name.trim() || typeof form.price !== "number" || !form.category) {
+        toast.error("Please fill in name, price and category");
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -274,10 +282,12 @@ export function Products() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-slate-600">{p.category}</td>
-                    <td className="px-5 py-3 font-semibold text-slate-700">Rs.{p.price.toFixed(2)}</td>
+                    <td className="px-5 py-3 font-semibold text-slate-700">
+                      {p.price !== undefined && p.price !== null ? `Rs.${p.price.toFixed(2)}` : "Contact for Price"}
+                    </td>
                     <td className="px-5 py-3">
                       <span className={p.stock === 0 ? "font-semibold text-rose-500" : "text-slate-600"}>
-                        {p.stock}
+                        {p.stock !== undefined && p.stock !== null ? p.stock : "—"}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -480,29 +490,47 @@ export function Products() {
               />
             </Field>
 
-            <Field label="Price (Rs.)" required>
+            <Field label="Price (Rs.)" required={mainCategory !== "Boots"}>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                value={form.price || ""}
-                onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
+                value={form.price === undefined || form.price === null ? "" : form.price}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const parsed = parseFloat(val);
+                  setForm({
+                    ...form,
+                    price: val === "" || isNaN(parsed) ? undefined : parsed
+                  });
+                }}
                 className="form-input"
                 placeholder="79.99"
               />
             </Field>
-            <Field label="Stock" required>
+            <Field label="Stock" required={mainCategory !== "Boots"}>
               <input
                 type="number"
                 min="0"
-                value={form.stock || ""}
+                value={form.stock === undefined || form.stock === null ? "" : form.stock}
                 onChange={(e) => {
-                  const stock = parseInt(e.target.value) || 0;
-                  setForm({
-                    ...form,
-                    stock,
-                    status: stock === 0 ? "Out of Stock" : "Active"
-                  });
+                  const val = e.target.value;
+                  if (mainCategory === "Boots") {
+                    const parsed = parseInt(val, 10);
+                    const stock = val === "" || isNaN(parsed) ? undefined : parsed;
+                    setForm({
+                      ...form,
+                      stock,
+                      status: stock === 0 ? "Out of Stock" : form.status
+                    });
+                  } else {
+                    const stock = parseInt(val, 10) || 0;
+                    setForm({
+                      ...form,
+                      stock,
+                      status: stock === 0 ? "Out of Stock" : "Active"
+                    });
+                  }
                 }}
                 className="form-input"
                 placeholder="42"

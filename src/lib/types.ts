@@ -7,8 +7,8 @@ export interface Product {
   name: string;
   team: string;
   category: string;
-  price: number;
-  stock: number;
+  price?: number;
+  stock?: number;
   sku: string;
   mainImage: string; // URL or base64 data URL (from image upload)
   optionalImages?: string[]; // Additional optional images
@@ -18,6 +18,7 @@ export interface Product {
   tag?: "New" | "Sale" | "Hot" | "Trendy" | "IPL" | "FIFA" | "";
   sizes?: string[];
   description?: string;
+  contactForPrice?: boolean;
 }
 
 /** The lifecycle status of a customer order. */

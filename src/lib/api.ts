@@ -6,7 +6,7 @@
 // to mimic network latency — making it easy to swap with real API calls later.
 
 import type { Customer, Order, OrderStatus, Product } from "./types";
-import { collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, deleteField } from "firebase/firestore";
 import { firebaseDb } from "./firebase";
 
 const STORAGE_KEY = "kitkart_data_v1";
@@ -86,8 +86,10 @@ export const productsApi = {
     const products: Product[] = [];
     querySnapshot.forEach((docSnap) => {
       const data = docSnap.data();
-      const stock = data.stockQuantity !== undefined ? data.stockQuantity : (data.stock || 0);
-      const status = stock === 0 ? "Out of Stock" : "In Stock";
+      const stock = data.stockQuantity !== undefined ? data.stockQuantity : data.stock;
+      const status = stock === undefined || stock === null
+        ? (data.status || "Active")
+        : (stock === 0 ? "Out of Stock" : (data.status || "In Stock"));
       products.push({
         id: docSnap.id,
         ...data,
@@ -103,8 +105,10 @@ export const productsApi = {
       const products: Product[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const stock = data.stockQuantity !== undefined ? data.stockQuantity : (data.stock || 0);
-        const status = stock === 0 ? "Out of Stock" : "In Stock";
+        const stock = data.stockQuantity !== undefined ? data.stockQuantity : data.stock;
+        const status = stock === undefined || stock === null
+          ? (data.status || "Active")
+          : (stock === 0 ? "Out of Stock" : (data.status || "In Stock"));
         products.push({
           id: docSnap.id,
           ...data,
@@ -120,33 +124,73 @@ export const productsApi = {
   async create(input: Omit<Product, "id" | "createdAt">): Promise<Product> {
     const newDocRef = doc(collection(firebaseDb, "products"));
     const createdAt = new Date().toISOString().slice(0, 10);
-    const { stock, ...rest } = input;
-    const stockQuantity = stock;
-    const status = stockQuantity === 0 ? "Out of Stock" : "In Stock";
-    const productData = {
+    const { stock, price, ...rest } = input;
+    const isBoot = rest.category?.toLowerCase().includes("boot");
+    
+    const productData: any = {
       ...rest,
-      stock,
-      stockQuantity,
-      status,
       createdAt,
     };
+
+    if (price !== undefined && price !== null) {
+      productData.price = price;
+    }
+    
+    if (stock !== undefined && stock !== null) {
+      productData.stock = stock;
+      productData.stockQuantity = stock;
+      productData.status = stock === 0 ? "Out of Stock" : (input.status || "In Stock");
+    } else {
+      productData.status = input.status || "Active";
+    }
+
+    if (isBoot) {
+      productData.contactForPrice = true;
+    }
+
     await setDoc(newDocRef, productData);
-    return { id: newDocRef.id, ...productData } as Product;
+    return {
+      id: newDocRef.id,
+      ...productData,
+      stock: productData.stock,
+    } as Product;
   },
   async update(id: string, input: Partial<Product>): Promise<Product> {
     const docRef = doc(firebaseDb, "products", id);
-    const { stock, ...rest } = input;
+    const { stock, price, ...rest } = input;
+    const isBoot = rest.category?.toLowerCase().includes("boot");
     const updateData: any = { ...rest };
-    if (stock !== undefined) {
+    
+    if (price !== undefined && price !== null) {
+      updateData.price = price;
+    } else if (isBoot) {
+      updateData.price = deleteField();
+    }
+
+    if (stock !== undefined && stock !== null) {
       updateData.stock = stock;
       updateData.stockQuantity = stock;
-      updateData.status = stock === 0 ? "Out of Stock" : "In Stock";
+      updateData.status = stock === 0 ? "Out of Stock" : (input.status || "In Stock");
+    } else if (isBoot) {
+      updateData.stock = deleteField();
+      updateData.stockQuantity = deleteField();
+      updateData.status = input.status || "Active";
     }
+
+    if (isBoot) {
+      updateData.contactForPrice = true;
+    } else if (input.category) {
+      updateData.contactForPrice = deleteField();
+    }
+
     await updateDoc(docRef, updateData);
     const docSnap = await getDoc(docRef);
     const data = docSnap.data() as any;
-    const updatedStock = data.stockQuantity !== undefined ? data.stockQuantity : (data.stock || 0);
-    const updatedStatus = updatedStock === 0 ? "Out of Stock" : "In Stock";
+    const updatedStock = data.stockQuantity !== undefined ? data.stockQuantity : data.stock;
+    const updatedStatus = updatedStock === undefined || updatedStock === null
+      ? (data.status || "Active")
+      : (updatedStock === 0 ? "Out of Stock" : (data.status || "In Stock"));
+    
     return {
       id: docSnap.id,
       ...data,
