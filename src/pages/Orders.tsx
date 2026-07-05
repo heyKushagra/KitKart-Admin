@@ -267,14 +267,31 @@ export function Orders() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
-              <div className="text-left">
-                <span className="text-xs text-slate-400 block">Payment Method ({selectedOrder.paymentMethod})</span>
-                <span className="text-lg font-bold text-slate-800">Total: Rs.{selectedOrder.total.toFixed(2)}</span>
+            <div className="flex items-start justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <div className="text-left min-w-[200px]">
+                <span className="text-xs text-slate-400 block mb-2">Payment Method ({selectedOrder.paymentMethod})</span>
+                {selectedOrder.discountAmount ? (
+                  <div className="space-y-1 mt-1">
+                    <div className="flex justify-between text-sm text-slate-500">
+                      <span>Subtotal:</span>
+                      <span>Rs.{(selectedOrder.subtotal || (selectedOrder.total + selectedOrder.discountAmount)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-emerald-600 font-medium">
+                      <span>Discount {selectedOrder.discountName ? `(${selectedOrder.discountName})` : ''}:</span>
+                      <span>- Rs.{selectedOrder.discountAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold text-slate-800 pt-1">
+                      <span>Total:</span>
+                      <span>Rs.{selectedOrder.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-lg font-bold text-slate-800">Total: Rs.{selectedOrder.total.toFixed(2)}</span>
+                )}
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition self-end"
               >
                 Close
               </button>

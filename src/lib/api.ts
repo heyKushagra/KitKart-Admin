@@ -225,6 +225,9 @@ export const ordersApi = {
         paymentMethod: data.paymentMethod === "cod" ? "Cash on Delivery" : "Online Payment",
         status: data.status || "Pending",
         date: date,
+        discountName: data.discountName || undefined,
+        discountAmount: data.discountAmount || data.discountValue || data.discount || undefined,
+        subtotal: data.subtotal || undefined,
       };
     });
   },
@@ -249,6 +252,9 @@ export const ordersApi = {
       paymentMethod: data.paymentMethod === "cod" ? "Cash on Delivery" : "Online Payment",
       status: data.status || "Pending",
       date: date,
+      discountName: data.discountName || undefined,
+      discountAmount: data.discountAmount || data.discountValue || data.discount || undefined,
+      subtotal: data.subtotal || undefined,
     };
   },
 };

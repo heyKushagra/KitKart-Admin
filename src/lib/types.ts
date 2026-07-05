@@ -41,6 +41,9 @@ export interface Order {
   paymentMethod: string;
   status: OrderStatus;
   date: string;
+  discountName?: string;
+  discountAmount?: number;
+  subtotal?: number;
 }
 
 /** A store customer (read-only in the admin panel). */
