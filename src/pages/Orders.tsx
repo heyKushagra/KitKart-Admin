@@ -1,8 +1,8 @@
 // Orders page — searchable table with inline-editable status badges.
 
 import { useEffect, useMemo, useState } from "react";
-import { ordersApi } from "../lib/api";
-import type { Order, OrderStatus } from "../lib/types";
+import { ordersApi, productsApi } from "../lib/api";
+import type { Order, OrderStatus, Product } from "../lib/types";
 import { useToast } from "../context/ToastContext";
 import { Badge, statusTone } from "../components/Badge";
 import { SearchInput } from "../components/SearchInput";
@@ -15,14 +15,16 @@ const STATUSES: OrderStatus[] = ["Pending", "Processing", "Shipped", "Delivered"
 export function Orders() {
   const toast = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    ordersApi.list().then((data) => {
-      setOrders(data);
+    Promise.all([ordersApi.list(), productsApi.list()]).then(([ordersData, productsData]) => {
+      setOrders(ordersData);
+      setProducts(productsData);
       setLoading(false);
     });
   }, []);
@@ -217,31 +219,49 @@ export function Orders() {
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Items Ordered</h4>
                 <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
-                  {selectedOrder.products.map((p, idx) => (
-                    <div key={idx} className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition">
-                      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
-                        {p.image ? (
-                          <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-slate-100 text-xs text-slate-400">
-                            No Img
-                          </div>
-                        )}
+                  {selectedOrder.products.map((p, idx) => {
+                    const baseId = p.id.split("-")[0];
+                    const dbProd = products.find((prod) => prod.id === baseId);
+                    const hasDiscount = dbProd && dbProd.price !== undefined && dbProd.price > p.price;
+
+                    return (
+                      <div key={idx} className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition">
+                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
+                          {p.image ? (
+                            <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-slate-100 text-xs text-slate-400">
+                              No Img
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
+                          <p className="text-xs text-slate-400">
+                            {p.size ? `Size: ${p.size}` : "Standard Size"}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm font-semibold text-slate-800">Rs.{(p.price * p.quantity).toFixed(2)}</p>
+                          <p className="text-xs text-slate-400">
+                            {p.quantity} x{" "}
+                            {hasDiscount ? (
+                              <>
+                                <span className="line-through text-slate-400 mr-1">
+                                  Rs.{dbProd.price?.toFixed(2)}
+                                </span>
+                                <span className="text-rose-500 font-semibold">
+                                  Rs.{p.price.toFixed(2)}
+                                </span>
+                              </>
+                            ) : (
+                              `Rs.${p.price.toFixed(2)}`
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
-                        <p className="text-xs text-slate-400">
-                          {p.size ? `Size: ${p.size}` : "Standard Size"}
-                        </p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-semibold text-slate-800">Rs.{(p.price * p.quantity).toFixed(2)}</p>
-                        <p className="text-xs text-slate-400">
-                          {p.quantity} x Rs.{p.price.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>

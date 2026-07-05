@@ -126,7 +126,7 @@ export const productsApi = {
     const createdAt = new Date().toISOString().slice(0, 10);
     const { stock, price, ...rest } = input;
     const isBoot = rest.category?.toLowerCase().includes("boot");
-    
+
     const productData: any = {
       ...rest,
       createdAt,
@@ -135,7 +135,7 @@ export const productsApi = {
     if (price !== undefined && price !== null) {
       productData.price = price;
     }
-    
+
     if (stock !== undefined && stock !== null) {
       productData.stock = stock;
       productData.stockQuantity = stock;
@@ -160,7 +160,7 @@ export const productsApi = {
     const { stock, price, ...rest } = input;
     const isBoot = rest.category?.toLowerCase().includes("boot");
     const updateData: any = { ...rest };
-    
+
     if (price !== undefined && price !== null) {
       updateData.price = price;
     } else if (isBoot) {
@@ -190,7 +190,7 @@ export const productsApi = {
     const updatedStatus = updatedStock === undefined || updatedStock === null
       ? (data.status || "Active")
       : (updatedStock === 0 ? "Out of Stock" : (data.status || "In Stock"));
-    
+
     return {
       id: docSnap.id,
       ...data,

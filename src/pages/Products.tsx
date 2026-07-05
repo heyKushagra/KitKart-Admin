@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Upload, Package } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { productsApi } from "../lib/api";
 import type { Product } from "../lib/types";
 import { useToast } from "../context/ToastContext";
@@ -30,6 +31,8 @@ const tags: Product["tag"][] = ["", "New", "Sale", "Hot", "Trendy", "IPL", "FIFA
 
 export function Products() {
   const toast = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -90,6 +93,14 @@ export function Products() {
     setSubCategory("Football");
     setFormOpen(true);
   }
+
+  useEffect(() => {
+    if (location.state?.openAdd) {
+      openCreate();
+      // Clear the state so it doesn't reopen if they refresh or click back
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state]);
 
   function openEdit(product: Product) {
     setEditingId(product.id);

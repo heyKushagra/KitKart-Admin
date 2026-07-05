@@ -1,7 +1,7 @@
 // Dashboard — overview with stat cards and a recent-orders table.
 
 import { useEffect, useState } from "react";
-import { Package, ShoppingCart, Users, Wallet } from "lucide-react";
+import { Package, ShoppingCart, Users, Wallet, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StatCard } from "../components/StatCard";
 import { Badge, statusTone } from "../components/Badge";
@@ -48,7 +48,23 @@ export function Dashboard() {
     <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Products" value={String(stats.products)} icon={Package} tone="sky" trend={8} />
+        <StatCard
+          label="Total Products"
+          value={String(stats.products)}
+          icon={Package}
+          tone="sky"
+          trend={8}
+          action={
+            <Link
+              to="/products"
+              state={{ openAdd: true }}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-sky-50 text-sky-600 hover:bg-sky-600 hover:text-white transition"
+              title="Add Product"
+            >
+              <Plus className="h-4 w-4" />
+            </Link>
+          }
+        />
         <StatCard label="Total Orders" value={String(stats.orders)} icon={ShoppingCart} tone="violet" trend={12} />
         <StatCard label="Customers" value={String(stats.customers)} icon={Users} tone="emerald" trend={5} />
         <StatCard label="Revenue" value={`Rs.${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`} icon={Wallet} tone="amber" trend={-3} />
