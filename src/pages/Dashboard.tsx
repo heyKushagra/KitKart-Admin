@@ -58,10 +58,10 @@ export function Dashboard() {
             <Link
               to="/products"
               state={{ openAdd: true }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-sky-50 text-sky-600 hover:bg-sky-600 hover:text-white transition"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-blue-100 text-sky-600 hover:bg-sky-600 hover:text-white transition"
               title="Add Product"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5 text-sky-900" />
             </Link>
           }
         />
