@@ -7,7 +7,46 @@
 
 import type { Customer, Order, OrderStatus, Product } from "./types";
 import { collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, deleteField } from "firebase/firestore";
-import { firebaseDb } from "./firebase";
+import { firebaseDb, firebaseStorage } from "./firebase";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
+
+async function handleTargetCategoryImages(
+  productId: string,
+  category: string,
+  mainImage: string,
+  optionalImages?: string[]
+): Promise<{ mainImage: string; optionalImages?: string[] }> {
+  if (!category) return { mainImage, optionalImages };
+  const lowerCat = category.trim().toLowerCase();
+  const isTarget = ["socks", "shin guards", "complete kit", "boots", "football boots"].includes(lowerCat) || lowerCat.includes("boot");
+  if (!isTarget) return { mainImage, optionalImages };
+
+  let updatedMainImage = mainImage;
+  if (mainImage && mainImage.startsWith("data:")) {
+    const storageRef = ref(firebaseStorage, `products/${productId}/mainImage_${Date.now()}`);
+    await uploadString(storageRef, mainImage, "data_url");
+    updatedMainImage = await getDownloadURL(storageRef);
+  }
+
+  let updatedOptionalImages = optionalImages;
+  if (optionalImages && optionalImages.length > 0) {
+    updatedOptionalImages = await Promise.all(
+      optionalImages.map(async (img, idx) => {
+        if (img && img.startsWith("data:")) {
+          const storageRef = ref(
+            firebaseStorage,
+            `products/${productId}/optionalImage_${idx}_${Date.now()}`
+          );
+          await uploadString(storageRef, img, "data_url");
+          return await getDownloadURL(storageRef);
+        }
+        return img;
+      })
+    );
+  }
+
+  return { mainImage: updatedMainImage, optionalImages: updatedOptionalImages };
+}
 
 const STORAGE_KEY = "kitkart_data_v1";
 const LATENCY = 350; // ms — fake network delay
@@ -127,8 +166,18 @@ export const productsApi = {
     const { stock, price, ...rest } = input;
     const isBoot = rest.category?.toLowerCase().includes("boot");
 
+    // Handle image upload to firebase storage if it's a target category
+    const { mainImage, optionalImages } = await handleTargetCategoryImages(
+      newDocRef.id,
+      rest.category || "",
+      rest.mainImage,
+      rest.optionalImages
+    );
+
     const productData: any = {
       ...rest,
+      mainImage,
+      optionalImages,
       createdAt,
     };
 
@@ -159,7 +208,39 @@ export const productsApi = {
     const docRef = doc(firebaseDb, "products", id);
     const { stock, price, ...rest } = input;
     const isBoot = rest.category?.toLowerCase().includes("boot");
+
+    let categoryToUse = rest.category;
+    if (!categoryToUse) {
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        categoryToUse = docSnap.data().category;
+      }
+    }
+
+    let mainImage = rest.mainImage;
+    let optionalImages = rest.optionalImages;
+    if (categoryToUse) {
+      const imgResult = await handleTargetCategoryImages(
+        id,
+        categoryToUse,
+        rest.mainImage || "",
+        rest.optionalImages
+      );
+      if (rest.mainImage !== undefined) {
+        mainImage = imgResult.mainImage;
+      }
+      if (rest.optionalImages !== undefined) {
+        optionalImages = imgResult.optionalImages;
+      }
+    }
+
     const updateData: any = { ...rest };
+    if (mainImage !== undefined) {
+      updateData.mainImage = mainImage;
+    }
+    if (optionalImages !== undefined) {
+      updateData.optionalImages = optionalImages;
+    }
 
     if (price !== undefined && price !== null) {
       updateData.price = price;

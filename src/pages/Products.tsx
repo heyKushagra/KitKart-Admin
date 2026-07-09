@@ -26,6 +26,7 @@ const emptyForm: Omit<Product, "id" | "createdAt"> = {
   tag: "",
   sizes: [],
   description: "",
+  brand: "",
 };
 const tags: Product["tag"][] = ["", "New", "Sale", "Hot", "Trendy", "IPL", "FIFA"];
 
@@ -43,17 +44,34 @@ export function Products() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  const [mainCategory, setMainCategory] = useState<"Jersey" | "Boots">("Jersey");
+  const [mainCategory, setMainCategory] = useState<"Jersey" | "Boots" | "Oversized T Shirt" | "Socks" | "Shin Guards" | "Complete Kit">("Jersey");
   const [subCategory, setSubCategory] = useState<string>("Football");
 
-  function handleMainCategoryChange(val: "Jersey" | "Boots") {
+  function handleMainCategoryChange(val: "Jersey" | "Boots" | "Oversized T Shirt" | "Socks" | "Shin Guards" | "Complete Kit") {
     setMainCategory(val);
     if (val === "Boots") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Football Boots", price: undefined, stock: undefined }));
-    } else {
+      setForm((f) => ({ ...f, category: "Football Boots", price: undefined, stock: undefined, sizes: [], brand: "" }));
+    }
+    else if (val === "Oversized T Shirt") {
+      setSubCategory("");
+      setForm((f) => ({ ...f, category: "Oversized T Shirt", price: undefined, stock: undefined, sizes: [], brand: "" }));
+    }
+    else if (val === "Socks") {
+      setSubCategory("");
+      setForm((f) => ({ ...f, category: "Socks", price: undefined, stock: undefined, sizes: [], brand: "" }));
+    }
+    else if (val === "Shin Guards") {
+      setSubCategory("");
+      setForm((f) => ({ ...f, category: "Shin Guards", price: undefined, stock: undefined, sizes: [], brand: "" }));
+    }
+    else if (val === "Complete Kit") {
+      setSubCategory("");
+      setForm((f) => ({ ...f, category: "Complete Kit", price: undefined, stock: undefined, sizes: [], brand: "" }));
+    }
+    else {
       setSubCategory("Football");
-      setForm((f) => ({ ...f, category: "Football Jerseys", price: 0, stock: 0 }));
+      setForm((f) => ({ ...f, category: "Football Jerseys", price: 0, stock: 0, sizes: [], brand: "" }));
     }
   }
 
@@ -74,12 +92,12 @@ export function Products() {
     return () => unsubscribe();
   }, []);
 
-  // Filter products by search query (name, team, sku, category).
+  // Filter products by search query (name, team, sku, category, brand).
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return products;
     return products.filter((p) =>
-      [p.name, p.team, p.sku, p.category].some((field) => field.toLowerCase().includes(q))
+      [p.name, p.team, p.sku, p.category, p.brand || ""].some((field) => field.toLowerCase().includes(q))
     );
   }, [products, query]);
 
@@ -93,6 +111,7 @@ export function Products() {
     setSubCategory("Football");
     setFormOpen(true);
   }
+
 
   useEffect(() => {
     if (location.state?.openAdd) {
@@ -109,6 +128,7 @@ export function Products() {
     setForm({
       sizes: [],
       description: "",
+      brand: "",
       ...rest,
     });
 
@@ -116,6 +136,21 @@ export function Products() {
     const lower = cat.toLowerCase();
     if (lower.includes("boot")) {
       setMainCategory("Boots");
+      setSubCategory("");
+    } else if (lower.includes("oversized")) {
+      setMainCategory("Oversized T Shirt");
+      setSubCategory("");
+    } else if (lower.includes("socks")) {
+      setMainCategory("Socks");
+      setSubCategory("");
+    } else if (lower.includes("shin guard")) {
+      setMainCategory("Shin Guards");
+      setSubCategory("");
+    } else if (lower.includes("complete kit")) {
+      setMainCategory("Complete Kit");
+      setSubCategory("");
+    } else if (lower.includes("t shirt")) {
+      setMainCategory("Oversized T Shirt");
       setSubCategory("");
     } else {
       setMainCategory("Jersey");
@@ -194,8 +229,8 @@ export function Products() {
     e.preventDefault();
     const isBoot = mainCategory === "Boots";
     if (isBoot) {
-      if (!form.name.trim() || !form.category) {
-        toast.error("Please fill in name and category");
+      if (!form.name.trim() || !form.category || !form.brand) {
+        toast.error("Please fill in name, category and brand");
         return;
       }
     } else {
@@ -288,7 +323,9 @@ export function Products() {
                         />
                         <div className="min-w-0">
                           <p className="truncate font-medium text-slate-700">{p.name}</p>
-                          <p className="truncate text-xs text-slate-400">{p.team} · {p.sku}</p>
+                          <p className="truncate text-xs text-slate-400">
+                            {p.brand ? `${p.brand} · ` : ""}{p.team} · {p.sku}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -444,11 +481,15 @@ export function Products() {
             <Field label="Category" required>
               <select
                 value={mainCategory}
-                onChange={(e) => handleMainCategoryChange(e.target.value as "Jersey" | "Boots")}
+                onChange={(e) => handleMainCategoryChange(e.target.value as any)}
                 className="form-input"
               >
                 <option value="Jersey">Jersey</option>
                 <option value="Boots">Boots</option>
+                <option value="Oversized T Shirt">Oversized T Shirt</option>
+                <option value="Socks">Socks</option>
+                <option value="Shin Guards">Shin Guards</option>
+                <option value="Complete Kit">Complete Kit</option>
               </select>
             </Field>
             {mainCategory === "Jersey" && (
@@ -468,10 +509,29 @@ export function Products() {
                 </select>
               </Field>
             )}
+            {mainCategory === "Boots" && (
+              <Field label="Brand" required>
+                <select
+                  value={form.brand || ""}
+                  onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="">Select Brand</option>
+                  <option value="Nike">Nike</option>
+                  <option value="Puma">Puma</option>
+                  <option value="Adidas">Adidas</option>
+                  <option value="Mizuno">Mizuno</option>
+                </select>
+              </Field>
+            )}
+
             <div className="col-span-1 sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Available Sizes</label>
               <div className="flex flex-wrap gap-4 mt-2">
-                {["xs", "s", "m", "l", "xl", "xxl"].map((size) => {
+                {(mainCategory === "Boots"
+                  ? ["38(EU)", "39(EU)", "40(EU)", "41(EU)", "42(EU)", "43(EU)", "44(EU)", "45(EU)"]
+                  : ["xs", "s", "m", "l", "xl", "xxl"]
+                ).map((size) => {
                   const isChecked = form.sizes?.includes(size) || false;
                   return (
                     <label key={size} className="inline-flex items-center gap-2 cursor-pointer">

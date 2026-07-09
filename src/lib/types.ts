@@ -19,6 +19,7 @@ export interface Product {
   sizes?: string[];
   description?: string;
   contactForPrice?: boolean;
+  brand?: string;
 }
 
 /** The lifecycle status of a customer order. */
