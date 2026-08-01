@@ -18,18 +18,26 @@ export function Dashboard() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const [p, o, c] = await Promise.all([
-        productsApi.list(),
-        ordersApi.list(),
-        customersApi.list(),
-      ]);
-      if (!active) return;
-      const revenue = o
-        .filter((ord) => ord.status !== "Cancelled")
-        .reduce((sum, ord) => sum + ord.total, 0);
-      setStats({ products: p.length, orders: o.length, customers: c.length, revenue });
-      setOrders(o.slice(0, 6));
-      setLoading(false);
+      try {
+        const [p, o, c] = await Promise.all([
+          productsApi.list(),
+          ordersApi.list(),
+          customersApi.list(),
+        ]);
+        if (!active) return;
+        const safeP = p || [];
+        const safeO = o || [];
+        const safeC = c || [];
+        const revenue = safeO
+          .filter((ord) => ord && ord.status !== "Cancelled")
+          .reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
+        setStats({ products: safeP.length, orders: safeO.length, customers: safeC.length, revenue });
+        setOrders(safeO.slice(0, 6));
+      } catch (err) {
+        console.error("Dashboard data load error:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
     })();
     return () => {
       active = false;

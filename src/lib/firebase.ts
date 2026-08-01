@@ -1,5 +1,5 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInAnonymously } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -30,3 +30,23 @@ export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseC
 export const firebaseAuth = getAuth(firebaseApp);
 export const firebaseDb = getFirestore(firebaseApp);
 export const firebaseStorage = getStorage(firebaseApp);
+firebaseStorage.maxUploadRetryTime = 3000;
+firebaseStorage.maxOperationRetryTime = 3000;
+
+// Await this promise before any Firestore operation that requires auth
+// (orders reads, products writes, etc.)
+let _authReady: Promise<void>;
+if (typeof window !== "undefined") {
+  _authReady = signInAnonymously(firebaseAuth)
+    .then(() => {
+      console.log("Firebase: Anonymous auth signed in successfully");
+    })
+    .catch((err) => {
+      console.warn("Firebase Anonymous Auth failed:", err?.message || err);
+      // Resolve anyway so the app doesn't hang — unauthenticated calls will
+      // be rejected by Firestore rules, which surfaces clearer errors.
+    });
+} else {
+  _authReady = Promise.resolve();
+}
+export const firebaseAuthReady = _authReady;

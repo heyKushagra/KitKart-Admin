@@ -45,6 +45,21 @@ export interface Order {
   discountName?: string;
   discountAmount?: number;
   subtotal?: number;
+  payment_type?: string;
+  order_total?: number;
+  advance_paid?: number;
+  cod_amount?: number;
+  payment_status?: string;
+  shiprocket_status?: string;
+  shiprocket_order_id?: string | number;
+  shipment_id?: string | number;
+  channel_order_id?: string | number;
+  shiprocket_error?: string;
+  shipment_status?: string;
+  awb_code?: string;
+  courier_name?: string;
+  tracking_url?: string;
+  shiprocket_updated_at?: string;
 }
 
 /** A store customer (read-only in the admin panel). */

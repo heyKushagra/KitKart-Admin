@@ -22,11 +22,22 @@ export function Orders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    Promise.all([ordersApi.list(), productsApi.list()]).then(([ordersData, productsData]) => {
-      setOrders(ordersData);
-      setProducts(productsData);
-      setLoading(false);
-    });
+    let active = true;
+    (async () => {
+      try {
+        const [ordersData, productsData] = await Promise.all([ordersApi.list(), productsApi.list()]);
+        if (!active) return;
+        setOrders(ordersData || []);
+        setProducts(productsData || []);
+      } catch (err) {
+        console.error("Orders load error:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -107,13 +118,24 @@ export function Orders() {
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      <p className="font-semibold text-slate-700">Rs.{o.total.toFixed(2)}</p>
-                      <p className="text-xs text-slate-400">{o.paymentMethod}</p>
+                      <p className="font-semibold text-slate-700">₹{(o.order_total ?? o.total).toFixed(2)}</p>
+                      <div className="flex flex-col gap-1 mt-1">
+                        {o.payment_type === "Partial COD" ? (
+                          <>
+                            <div className="w-fit"><Badge tone="amber">Partial COD</Badge></div>
+                            <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                              ₹{o.advance_paid || 149} Paid + ₹{o.cod_amount ?? ((o.order_total ?? o.total) - (o.advance_paid || 149))} COD
+                            </span>
+                          </>
+                        ) : (
+                          <div className="w-fit"><Badge tone="green">{o.payment_type || o.paymentMethod || "Prepaid"}</Badge></div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3 text-slate-500">{o.date}</td>
                     <td className="px-5 py-3">
                       {/* Inline status dropdown using overlay select to avoid clipping */}
-                      <div className="relative inline-block">
+                      <div className="relative inline-block mb-1">
                         <div className="inline-flex items-center gap-1.5 rounded-full pointer-events-none">
                           <Badge tone={statusTone(o.status)}>
                             {o.status}
@@ -132,6 +154,15 @@ export function Orders() {
                           ))}
                         </select>
                       </div>
+                      {o.shiprocket_status && (
+                        <div className="mt-1 flex flex-col gap-1">
+                          {o.shiprocket_status === "Failed" ? (
+                            <div className="w-fit"><Badge tone="red">SR: Failed</Badge></div>
+                          ) : (
+                            <div className="w-fit"><Badge tone="blue">SR: {o.shiprocket_status}</Badge></div>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <button
@@ -264,38 +295,134 @@ export function Orders() {
                   })}
                 </div>
               </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-start justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
-              <div className="text-left min-w-[200px]">
-                <span className="text-xs text-slate-400 block mb-2">Payment Method ({selectedOrder.paymentMethod})</span>
-                {selectedOrder.discountAmount ? (
-                  <div className="space-y-1 mt-1">
-                    <div className="flex justify-between text-sm text-slate-500">
-                      <span>Subtotal:</span>
-                      <span>Rs.{(selectedOrder.subtotal || (selectedOrder.total + selectedOrder.discountAmount)).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm text-emerald-600 font-medium">
-                      <span>Discount {selectedOrder.discountName ? `(${selectedOrder.discountName})` : ''}:</span>
-                      <span>- Rs.{selectedOrder.discountAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold text-slate-800 pt-1">
-                      <span>Total:</span>
-                      <span>Rs.{selectedOrder.total.toFixed(2)}</span>
-                    </div>
+              </div>
+              
+              {/* Shipping / Shiprocket Section */}
+              <div className="bg-slate-50 p-5 rounded-xl space-y-4 border border-slate-100">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Shipping & Tracking (Shiprocket)</h4>
+                {selectedOrder.shiprocket_status === "Failed" && (
+                  <div className="bg-rose-100 text-rose-800 p-3 rounded-lg text-sm border border-rose-200">
+                    <p className="font-bold">Shiprocket order creation failed</p>
+                    {selectedOrder.shiprocket_error && <p className="mt-1 text-xs opacity-90">{selectedOrder.shiprocket_error}</p>}
                   </div>
-                ) : (
-                  <span className="text-lg font-bold text-slate-800">Total: Rs.{selectedOrder.total.toFixed(2)}</span>
+                )}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-xs text-slate-500 block">Shiprocket Status</span>
+                    <span className="font-medium text-slate-700">{selectedOrder.shiprocket_status || "Not Available"}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500 block">Shipment Status</span>
+                    <span className="font-medium text-slate-700">{selectedOrder.shipment_status || "Not Available"}</span>
+                  </div>
+                  {(selectedOrder.shiprocket_order_id || selectedOrder.shipment_id) && (
+                    <>
+                      <div>
+                        <span className="text-xs text-slate-500 block">SR Order ID</span>
+                        <span className="font-medium text-slate-700">{selectedOrder.shiprocket_order_id || "-"}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500 block">Shipment ID</span>
+                        <span className="font-medium text-slate-700">{selectedOrder.shipment_id || "-"}</span>
+                      </div>
+                    </>
+                  )}
+                  {selectedOrder.awb_code && (
+                    <>
+                      <div>
+                        <span className="text-xs text-slate-500 block">AWB Code</span>
+                        <span className="font-medium text-slate-700">{selectedOrder.awb_code}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500 block">Courier</span>
+                        <span className="font-medium text-slate-700">{selectedOrder.courier_name || "-"}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {selectedOrder.tracking_url && (
+                  <div className="mt-2">
+                    <a href={selectedOrder.tracking_url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition">
+                      Track Shipment
+                    </a>
+                  </div>
                 )}
               </div>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition self-end"
-              >
-                Close
-              </button>
             </div>
+
+            {/* Modal Footer (Payment Details) */}
+            <div className="flex flex-col gap-4 border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="text-left min-w-[250px] space-y-2 w-full sm:w-auto">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Payment Details</h4>
+                  
+                  {selectedOrder.payment_type === "Partial COD" ? (
+                    <div className="space-y-2 mt-2 bg-white p-4 rounded-lg border border-amber-100 shadow-sm">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Payment Type:</span>
+                        <span className="font-semibold text-amber-700">Partial COD</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Total Amount:</span>
+                        <span className="font-medium text-slate-800">₹{(selectedOrder.order_total ?? selectedOrder.total).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Advance Paid:</span>
+                        <span className="font-medium text-emerald-600">₹{(selectedOrder.advance_paid || 149).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-bold border-t border-slate-100 pt-2 mt-1">
+                        <span className="text-slate-800">COD Due:</span>
+                        <span className="text-rose-600">₹{(selectedOrder.cod_amount ?? ((selectedOrder.order_total ?? selectedOrder.total) - (selectedOrder.advance_paid || 149))).toFixed(2)}</span>
+                      </div>
+                      {selectedOrder.payment_status && (
+                        <div className="flex justify-between text-xs mt-1 pt-2 border-t border-slate-50">
+                          <span className="text-slate-400">Status:</span>
+                          <span className="font-medium text-slate-600">{selectedOrder.payment_status}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mt-2 bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Payment Type:</span>
+                        <span className="font-semibold text-emerald-700">{selectedOrder.payment_type || selectedOrder.paymentMethod || "Prepaid"}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Total Amount:</span>
+                        <span className="font-medium text-slate-800">₹{(selectedOrder.order_total ?? selectedOrder.total).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Paid Online:</span>
+                        <span className="font-medium text-emerald-600">₹{(selectedOrder.order_total ?? selectedOrder.total).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-bold border-t border-slate-100 pt-2 mt-1">
+                        <span className="text-slate-800">COD Due:</span>
+                        <span className="text-slate-400">₹0.00</span>
+                      </div>
+                      {selectedOrder.payment_status && (
+                        <div className="flex justify-between text-xs mt-1 pt-2 border-t border-slate-50">
+                          <span className="text-slate-400">Status:</span>
+                          <span className="font-medium text-slate-600">{selectedOrder.payment_status}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Legacy discount logic just in case it's needed */}
+                  {selectedOrder.discountAmount ? (
+                    <div className="text-xs text-slate-400 mt-2 text-right">
+                      Includes discount {selectedOrder.discountName ? `(${selectedOrder.discountName})` : ''}: -₹{selectedOrder.discountAmount.toFixed(2)}
+                    </div>
+                  ) : null}
+                </div>
+                
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition sm:self-end mt-2 sm:mt-0"
+                >
+                  Close
+                </button>
+              </div>
           </div>
         </div>
       )}

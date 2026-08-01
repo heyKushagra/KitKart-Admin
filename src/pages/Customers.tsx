@@ -13,10 +13,21 @@ export function Customers() {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    customersApi.list().then((data) => {
-      setCustomers(data);
-      setLoading(false);
-    });
+    let active = true;
+    (async () => {
+      try {
+        const data = await customersApi.list();
+        if (!active) return;
+        setCustomers(data || []);
+      } catch (err) {
+        console.error("Customers load error:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filtered = useMemo(() => {

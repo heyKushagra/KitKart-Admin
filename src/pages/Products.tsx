@@ -251,7 +251,8 @@ export function Products() {
         toast.success("Product added successfully");
       }
       setFormOpen(false);
-    } catch {
+    } catch (err) {
+      console.error("Error updating product:", err);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
