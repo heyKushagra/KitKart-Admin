@@ -434,6 +434,7 @@ function parseOrderDoc(docSnap: any): Order & { _rawTime: number } {
 
   return {
     id: docSnap.id,
+    order_id: data.order_id !== undefined && data.order_id !== null ? Number(data.order_id) : undefined,
     customerName,
     customerEmail,
     customerPhone,

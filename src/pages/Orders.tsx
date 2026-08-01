@@ -44,7 +44,7 @@ export function Orders() {
     const q = query.trim().toLowerCase();
     if (!q) return orders;
     return orders.filter((o) =>
-      [o.id, o.customerName, o.customerEmail, o.customerPhone, o.status, o.customerAddress].some((f) => f && f.toLowerCase().includes(q))
+      [o.order_id ? String(o.order_id) : o.id, o.customerName, o.customerEmail, o.customerPhone, o.status, o.customerAddress].some((f) => f && String(f).toLowerCase().includes(q))
     );
   }, [orders, query]);
 
@@ -57,7 +57,7 @@ export function Orders() {
       if (selectedOrder && selectedOrder.id === order.id) {
         setSelectedOrder(updated);
       }
-      toast.success(`Order ${order.id} marked as ${status}`);
+      toast.success(`Order #${order.order_id || order.id.slice(0, 8).toUpperCase()} marked as ${status}`);
     } catch {
       toast.error("Could not update order status");
     }
@@ -95,7 +95,7 @@ export function Orders() {
               <tbody className="divide-y divide-slate-50">
                 {filtered.map((o) => (
                   <tr key={o.id} className="transition hover:bg-slate-50/60">
-                    <td className="px-5 py-3 font-medium text-slate-700">{o.id}</td>
+                    <td className="px-5 py-3 font-medium text-slate-700">#{o.order_id || o.id.slice(0, 8).toUpperCase()}</td>
                     <td className="px-5 py-3">
                       <p className="font-medium text-slate-700">{o.customerName}</p>
                       <p className="text-xs text-slate-500">{o.customerEmail}</p>
@@ -188,7 +188,7 @@ export function Orders() {
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-800">Order Details</h3>
-                <p className="text-xs text-slate-400">ID: {selectedOrder.id}</p>
+                <p className="text-xs text-slate-400">ID: #{selectedOrder.order_id || selectedOrder.id.slice(0, 8).toUpperCase()}</p>
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}

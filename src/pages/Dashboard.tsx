@@ -107,7 +107,7 @@ export function Dashboard() {
               <tbody className="divide-y divide-slate-50">
                 {orders.map((o) => (
                   <tr key={o.id} className="transition hover:bg-slate-50/60">
-                    <td className="px-5 py-3 font-medium text-slate-700">{o.id}</td>
+                    <td className="px-5 py-3 font-medium text-slate-700">#{o.order_id || o.id.slice(0, 8).toUpperCase()}</td>
                     <td className="px-5 py-3 text-slate-600">{o.customerName}</td>
                     <td className="px-5 py-3 font-semibold text-slate-700">Rs.{o.total.toFixed(2)}</td>
                     <td className="px-5 py-3">

@@ -33,6 +33,7 @@ export type OrderStatus =
 /** A customer order containing one or more items. */
 export interface Order {
   id: string;
+  order_id?: number;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
