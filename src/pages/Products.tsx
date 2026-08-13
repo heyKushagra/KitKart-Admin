@@ -505,7 +505,7 @@ export function Products() {
                   <option value="Player">Player Version</option>
                   <option value="Club">Fan Version</option>
                   <option value="Retro">Retro Version</option>
-                  <option value="Club">Master Version</option>
+                  <option value="Master">Master Version</option>
 
                 </select>
               </Field>

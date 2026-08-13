@@ -539,13 +539,13 @@ export const customersApi = {
 export const authApi = {
   async login(email: string, password: string): Promise<{ name: string; email: string }> {
     await delay(null, 600);
-    if (email === "kishan@kitkart.com" && password === "kishan1234") {
+    if (email === "kishan@kitkart.net" && password === "@kishan06") {
       return { name: "Kishan Shukla", email };
     }
-    if (email === "admin@kitkart.com" && password === "adminkush") {
+    if (email === "admin@kitkart.net" && password === "adminkush") {
       return { name: "Kushagra", email };
     }
-    if (email === "admin1@kitkart.com" && password === "newadmin123") {
+    if (email === "admin1@kitkart.net" && password === "newadmin123") {
       return { name: "NEW ADMIN", email };
     }
     throw new Error("Invalid email or password");
