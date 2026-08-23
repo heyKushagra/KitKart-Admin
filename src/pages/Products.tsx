@@ -17,6 +17,7 @@ const emptyForm: Omit<Product, "id" | "createdAt"> = {
   name: "",
   team: "",
   category: "Football Jerseys",
+  mrp: undefined,
   price: 0,
   stock: 0,
   sku: "",
@@ -51,27 +52,27 @@ export function Products() {
     setMainCategory(val);
     if (val === "Boots") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Football Boots", price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Football Boots", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
     }
     else if (val === "Oversized T Shirt") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Oversized T Shirt", price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Oversized T Shirt", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
     }
     else if (val === "Socks") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Socks", price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Socks", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
     }
     else if (val === "Shin Guards") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Shin Guards", price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Shin Guards", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
     }
     else if (val === "Complete Kit") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Complete Kit", price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Complete Kit", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
     }
     else {
       setSubCategory("Football");
-      setForm((f) => ({ ...f, category: "Football Jerseys", price: 0, stock: 0, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Football Jerseys", mrp: undefined, price: 0, stock: 0, sizes: [], brand: "" }));
     }
   }
 
@@ -238,6 +239,20 @@ export function Products() {
         toast.error("Please fill in name, price and category");
         return;
       }
+      if (form.price < 0) {
+        toast.error("Selling Price must be a positive number");
+        return;
+      }
+      if (form.mrp !== undefined && form.mrp !== null) {
+        if (form.mrp < 0) {
+          toast.error("MRP must be a positive number");
+          return;
+        }
+        if (form.price > form.mrp) {
+          toast.error("Selling Price cannot be greater than MRP");
+          return;
+        }
+      }
     }
     setSaving(true);
     try {
@@ -332,7 +347,12 @@ export function Products() {
                     </td>
                     <td className="px-5 py-3 text-slate-600">{p.category}</td>
                     <td className="px-5 py-3 font-semibold text-slate-700">
-                      {p.price !== undefined && p.price !== null ? `Rs.${p.price.toFixed(2)}` : "Contact for Price"}
+                      {p.price !== undefined && p.price !== null ? (
+                        <div className="flex flex-col">
+                          {p.mrp ? <span className="text-xs text-slate-400 line-through font-normal">MRP: Rs.{p.mrp.toFixed(2)}</span> : null}
+                          <span>Rs.{p.price.toFixed(2)}</span>
+                        </div>
+                      ) : "Contact for Price"}
                     </td>
                     <td className="px-5 py-3">
                       <span className={p.stock === 0 ? "font-semibold text-rose-500" : "text-slate-600"}>
@@ -562,7 +582,25 @@ export function Products() {
               />
             </Field>
 
-            <Field label="Price (Rs.)" required={mainCategory !== "Boots"}>
+            <Field label="MRP (Rs.)" required={false}>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.mrp === undefined || form.mrp === null ? "" : form.mrp}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const parsed = parseFloat(val);
+                  setForm({
+                    ...form,
+                    mrp: val === "" || isNaN(parsed) ? undefined : parsed
+                  });
+                }}
+                className="form-input"
+                placeholder="999"
+              />
+            </Field>
+            <Field label="Selling Price (Rs.)" required={mainCategory !== "Boots"}>
               <input
                 type="number"
                 min="0"
@@ -577,7 +615,7 @@ export function Products() {
                   });
                 }}
                 className="form-input"
-                placeholder="79.99"
+                placeholder="799"
               />
             </Field>
             <Field label="Stock" required={mainCategory !== "Boots"}>

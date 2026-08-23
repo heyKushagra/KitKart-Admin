@@ -7,6 +7,7 @@ export interface Product {
   name: string;
   team: string;
   category: string;
+  mrp?: number;
   price?: number;
   stock?: number;
   sku: string;
