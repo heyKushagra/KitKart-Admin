@@ -541,6 +541,8 @@ export function Products() {
                   <option value="Nike">Nike</option>
                   <option value="Puma">Puma</option>
                   <option value="Adidas">Adidas</option>
+                  <option value="Sega">Sega</option>
+                  <option value="Anza">Anza</option>
                   <option value="Mizuno">Mizuno</option>
                 </select>
               </Field>
