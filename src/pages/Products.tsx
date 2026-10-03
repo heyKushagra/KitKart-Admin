@@ -534,7 +534,18 @@ export function Products() {
               <Field label="Brand" required>
                 <select
                   value={form.brand || ""}
-                  onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                  onChange={(e) => {
+                    const selectedBrand = e.target.value;
+                    const isSpecialBrand = ["anza", "puks", "spika"].includes(selectedBrand.toLowerCase());
+                    const prevWasSpecial = ["anza", "puks", "spika"].includes((form.brand || "").toLowerCase());
+                    let newStatus = form.status;
+                    if (isSpecialBrand) {
+                      newStatus = "Active";
+                    } else if (prevWasSpecial && form.status === "Active") {
+                      newStatus = "Out of Stock";
+                    }
+                    setForm({ ...form, brand: selectedBrand, status: newStatus });
+                  }}
                   className="form-input"
                 >
                   <option value="">Select Brand</option>
@@ -543,6 +554,9 @@ export function Products() {
                   <option value="Adidas">Adidas</option>
                   <option value="Sega">Sega</option>
                   <option value="Anza">Anza</option>
+                  <option value="Spika">Spika</option>
+                  <option value="Puks">Puks</option>
+                  <option value="Local">Local</option>
                   <option value="Mizuno">Mizuno</option>
                 </select>
               </Field>
