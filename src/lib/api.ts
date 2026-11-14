@@ -261,6 +261,12 @@ export const productsApi = {
       productData.contactForPrice = true;
     }
 
+    if (rest.jerseyYear && !isBoot) {
+      productData.jerseyYear = String(rest.jerseyYear);
+    } else {
+      delete productData.jerseyYear;
+    }
+
     const cleanProductData = removeUndefined(productData);
 
     await setDoc(newDocRef, cleanProductData);
@@ -327,8 +333,17 @@ export const productsApi = {
 
     if (isBoot) {
       updateData.contactForPrice = true;
+      updateData.jerseyYear = deleteField();
     } else if (input.category) {
       updateData.contactForPrice = deleteField();
+    }
+
+    if (rest.jerseyYear !== undefined) {
+      if (rest.jerseyYear && !isBoot) {
+        updateData.jerseyYear = String(rest.jerseyYear);
+      } else {
+        updateData.jerseyYear = deleteField();
+      }
     }
 
     const cleanUpdateData = removeUndefined(updateData);

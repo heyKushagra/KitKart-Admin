@@ -21,6 +21,7 @@ export interface Product {
   description?: string;
   contactForPrice?: boolean;
   brand?: string;
+  jerseyYear?: string;
 }
 
 /** The lifecycle status of a customer order. */

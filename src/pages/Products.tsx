@@ -28,8 +28,11 @@ const emptyForm: Omit<Product, "id" | "createdAt"> = {
   sizes: [],
   description: "",
   brand: "",
+  jerseyYear: "",
 };
 const tags: Product["tag"][] = ["", "New", "Sale", "Hot", "Trendy", "IPL", "FIFA"];
+const JERSEY_VERSIONS = ["Club", "Player", "Retro", "Master"];
+const JERSEY_YEARS = ["2026", "2025", "2024", "2023"];
 
 export function Products() {
   const toast = useToast();
@@ -52,33 +55,38 @@ export function Products() {
     setMainCategory(val);
     if (val === "Boots") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Football Boots", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Football Boots", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "", jerseyYear: "" }));
     }
     else if (val === "Oversized T Shirt") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Oversized T Shirt", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Oversized T Shirt", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "", jerseyYear: "" }));
     }
     else if (val === "Socks") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Socks", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Socks", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "", jerseyYear: "" }));
     }
     else if (val === "Shin Guards") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Shin Guards", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Shin Guards", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "", jerseyYear: "" }));
     }
     else if (val === "Complete Kit") {
       setSubCategory("");
-      setForm((f) => ({ ...f, category: "Complete Kit", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Complete Kit", mrp: undefined, price: undefined, stock: undefined, sizes: [], brand: "", jerseyYear: "" }));
     }
     else {
       setSubCategory("Football");
-      setForm((f) => ({ ...f, category: "Football Jerseys", mrp: undefined, price: 0, stock: 0, sizes: [], brand: "" }));
+      setForm((f) => ({ ...f, category: "Football Jerseys", mrp: undefined, price: 0, stock: 0, sizes: [], brand: "", jerseyYear: "" }));
     }
   }
 
   function handleSubCategoryChange(val: string) {
     setSubCategory(val);
-    setForm((f) => ({ ...f, category: `${val} Jerseys` }));
+    const isVersion = JERSEY_VERSIONS.includes(val);
+    setForm((f) => ({
+      ...f,
+      category: `${val} Jerseys`,
+      ...(!isVersion ? { jerseyYear: "" } : {}),
+    }));
   }
 
   // Delete confirmation state
@@ -93,12 +101,12 @@ export function Products() {
     return () => unsubscribe();
   }, []);
 
-  // Filter products by search query (name, team, sku, category, brand).
+  // Filter products by search query (name, team, sku, category, brand, jerseyYear).
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return products;
     return products.filter((p) =>
-      [p.name, p.team, p.sku, p.category, p.brand || ""].some((field) => field.toLowerCase().includes(q))
+      [p.name, p.team, p.sku, p.category, p.brand || "", p.jerseyYear || ""].some((field) => field.toLowerCase().includes(q))
     );
   }, [products, query]);
 
@@ -107,6 +115,7 @@ export function Products() {
     setForm({
       ...emptyForm,
       category: "Football Jerseys",
+      jerseyYear: "",
     });
     setMainCategory("Jersey");
     setSubCategory("Football");
@@ -131,6 +140,7 @@ export function Products() {
       description: "",
       brand: "",
       ...rest,
+      jerseyYear: product.jerseyYear ? String(product.jerseyYear) : "",
     });
 
     const cat = rest.category || "";
@@ -159,8 +169,12 @@ export function Products() {
         setSubCategory("Cricket");
       } else if (lower.includes("player")) {
         setSubCategory("Player");
-      } else if (lower.includes("club")) {
+      } else if (lower.includes("club") || lower.includes("fan")) {
         setSubCategory("Club");
+      } else if (lower.includes("retro")) {
+        setSubCategory("Retro");
+      } else if (lower.includes("master")) {
+        setSubCategory("Master");
       } else {
         setSubCategory("Football");
       }
@@ -256,12 +270,18 @@ export function Products() {
     }
     setSaving(true);
     try {
+      const isJerseyVersion = mainCategory === "Jersey" && JERSEY_VERSIONS.includes(subCategory);
+      const productPayload = {
+        ...form,
+        jerseyYear: isJerseyVersion && form.jerseyYear ? String(form.jerseyYear) : "",
+      };
+
       if (editingId) {
-        const updated = await productsApi.update(editingId, form);
+        const updated = await productsApi.update(editingId, productPayload);
         setProducts((prev) => prev.map((p) => (p.id === editingId ? updated : p)));
         toast.success("Product updated successfully");
       } else {
-        const created = await productsApi.create(form);
+        const created = await productsApi.create(productPayload);
         setProducts((prev) => [created, ...prev]);
         toast.success("Product added successfully");
       }
@@ -527,6 +547,22 @@ export function Products() {
                   <option value="Retro">Retro Version</option>
                   <option value="Master">Master Version</option>
 
+                </select>
+              </Field>
+            )}
+            {mainCategory === "Jersey" && JERSEY_VERSIONS.includes(subCategory) && (
+              <Field label="Jersey Year">
+                <select
+                  value={form.jerseyYear || ""}
+                  onChange={(e) => setForm({ ...form, jerseyYear: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="">Select Year</option>
+                  {JERSEY_YEARS.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
+                  ))}
                 </select>
               </Field>
             )}
