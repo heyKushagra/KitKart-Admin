@@ -603,7 +603,7 @@ export function Products() {
               <div className="flex flex-wrap gap-4 mt-2">
                 {(mainCategory === "Boots"
                   ? ["38(EU)", "39(EU)", "40(EU)", "41(EU)", "42(EU)", "43(EU)", "44(EU)", "45(EU)"]
-                  : ["xs", "s", "m", "l", "xl", "xxl"]
+                  : ["xs", "s", "m", "l", "xl"]
                 ).map((size) => {
                   const isChecked = form.sizes?.includes(size) || false;
                   return (
